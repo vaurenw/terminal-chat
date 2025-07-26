@@ -2,15 +2,6 @@
 
 A terminal-based chat application that allows two devices to communicate via Bluetooth using the RFCOMM protocol.
 
-## Features
-
-- 🔵 **Bluetooth Communication**: Uses RFCOMM protocol for reliable device-to-device communication
-- 💬 **Real-time Messaging**: Send and receive messages instantly between two devices
-- 🖥️ **Terminal Interface**: Clean, colorful terminal-based user interface
-- 🎨 **Color-coded Messages**: Different colors for server, client, and system messages
-- 🔍 **Device Discovery**: Automatic discovery of nearby Bluetooth devices
-- 🛡️ **Error Handling**: Robust error handling for connection issues
-
 ## System Requirements
 
 - Python 3.6 or higher
@@ -23,14 +14,14 @@ A terminal-based chat application that allows two devices to communicate via Blu
 1. **Clone or download** the project files to both devices
 2. **Install dependencies**:
    ```bash
-   pip install pybluez colorama
+   pip install -r requirements.txt
    ```
    
    **Note for Windows users**: PyBluez may have compatibility issues with newer Python versions. If you encounter installation problems:
    
    ### Alternative Installation Methods:
    - Try using Python 3.8 or 3.9 instead of newer versions
-   - Use conda: `conda install pybluez`
+   - Use conda: `conda install pybluez colorama`
    - For testing purposes, use the simulation version (see Testing section below)
 
 3. **Enable Bluetooth** on both devices
@@ -51,20 +42,6 @@ python chat_simulation.py client
 This uses TCP sockets over localhost to simulate the Bluetooth communication, allowing you to test the chat interface and functionality.
 
 ## Usage
-
-### Method 1: Using the Launcher (Recommended)
-
-Run the unified launcher on both devices:
-
-```bash
-python chat_launcher.py
-```
-
-Then choose:
-- **Option 1**: Start as Server (one device)
-- **Option 2**: Start as Client (other device)
-
-### Method 2: Running Components Separately
 
 **On the first device (Server):**
 ```bash
@@ -90,9 +67,7 @@ python bt_chat_client.py
 terminal-chat/
 ├── bt_chat_server.py    # Server component
 ├── bt_chat_client.py    # Client component  
-├── chat_launcher.py     # Unified launcher
 ├── chat_simulation.py   # TCP simulation for testing
-├── test_bluetooth.py    # System compatibility test
 ├── requirements.txt     # Python dependencies
 └── README.md           # This file
 ```
@@ -157,6 +132,3 @@ This project is open source and available under the MIT License.
 
 Feel free to submit issues, feature requests, or pull requests to improve the application.
 
----
-
-**Happy Chatting! 📱💬🔵**
