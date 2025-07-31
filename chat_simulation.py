@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bluetooth Chat Simulation
+Bluetooth Chat Simulation with Encryption
 A simulation version of the Bluetooth chat for testing purposes when PyBluez is not available.
 This uses standard sockets over localhost to simulate the Bluetooth communication.
 """
@@ -9,6 +9,7 @@ import socket
 import threading
 import sys
 from colorama import init, Fore, Style
+from encryption import ChatEncryption, get_chat_password
 
 # Initialize colorama for Windows compatibility
 init()
@@ -20,9 +21,18 @@ class BluetoothChatSimServer:
         self.client_info = None
         self.running = False
         self.username = "Server"
+        self.encryption = None
         
     def start_server(self):
         """Start the simulation server"""
+        # Setup encryption
+        password = get_chat_password()
+        if password:
+            self.encryption = ChatEncryption(password)
+            print(f"{Fore.GREEN}🔒 Encryption enabled{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.YELLOW}⚠️  No encryption - messages will be sent in plaintext{Style.RESET_ALL}")
+        
         try:
             # Create a TCP socket (simulating Bluetooth RFCOMM)
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -87,8 +97,17 @@ class BluetoothChatSimServer:
                     print(f"{Fore.RED}Client disconnected.{Style.RESET_ALL}")
                     self.running = False
                     break
-                    
-                print(f"{Fore.BLUE}Client: {message}{Style.RESET_ALL}")
+                
+                # Decrypt message if encryption is enabled
+                if self.encryption and self.encryption.is_encrypted():
+                    try:
+                        decrypted_message = self.encryption.decrypt_message(message)
+                        print(f"{Fore.BLUE}Client: {decrypted_message} {Fore.GREEN}🔒{Style.RESET_ALL}")
+                    except Exception as e:
+                        print(f"{Fore.RED}Failed to decrypt message from client{Style.RESET_ALL}")
+                        print(f"{Fore.BLUE}Client (encrypted): {message[:50]}...{Style.RESET_ALL}")
+                else:
+                    print(f"{Fore.BLUE}Client: {message}{Style.RESET_ALL}")
                 
             except socket.error:
                 print(f"{Fore.RED}Connection lost.{Style.RESET_ALL}")
@@ -112,8 +131,14 @@ class BluetoothChatSimServer:
                     break
                     
                 if message.strip():  # Only send non-empty messages
-                    self.client_socket.send(message.encode('utf-8'))
-                    print(f"\033[F{Fore.GREEN}{self.username}: {message}{Style.RESET_ALL}")
+                    # Encrypt message if encryption is enabled
+                    if self.encryption and self.encryption.is_encrypted():
+                        encrypted_message = self.encryption.encrypt_message(message)
+                        self.client_socket.send(encrypted_message.encode('utf-8'))
+                        print(f"\033[F{Fore.GREEN}{self.username}: {message} {Fore.GREEN}🔒{Style.RESET_ALL}")
+                    else:
+                        self.client_socket.send(message.encode('utf-8'))
+                        print(f"\033[F{Fore.GREEN}{self.username}: {message}{Style.RESET_ALL}")
                     
             except socket.error:
                 print(f"{Fore.RED}Connection lost.{Style.RESET_ALL}")
@@ -150,9 +175,18 @@ class BluetoothChatSimClient:
         self.client_socket = None
         self.running = False
         self.username = "Client"
+        self.encryption = None
         
     def connect_to_server(self):
         """Connect to the simulation server"""
+        # Setup encryption
+        password = get_chat_password()
+        if password:
+            self.encryption = ChatEncryption(password)
+            print(f"{Fore.GREEN}🔒 Encryption enabled{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.YELLOW}⚠️  No encryption - messages will be sent in plaintext{Style.RESET_ALL}")
+        
         try:
             host = 'localhost'
             port = 12345
@@ -208,8 +242,17 @@ class BluetoothChatSimClient:
                     print(f"{Fore.RED}Server disconnected.{Style.RESET_ALL}")
                     self.running = False
                     break
-                    
-                print(f"{Fore.BLUE}Server: {message}{Style.RESET_ALL}")
+                
+                # Decrypt message if encryption is enabled
+                if self.encryption and self.encryption.is_encrypted():
+                    try:
+                        decrypted_message = self.encryption.decrypt_message(message)
+                        print(f"{Fore.BLUE}Server: {decrypted_message} {Fore.GREEN}🔒{Style.RESET_ALL}")
+                    except Exception as e:
+                        print(f"{Fore.RED}Failed to decrypt message from server{Style.RESET_ALL}")
+                        print(f"{Fore.BLUE}Server (encrypted): {message[:50]}...{Style.RESET_ALL}")
+                else:
+                    print(f"{Fore.BLUE}Server: {message}{Style.RESET_ALL}")
                 
             except socket.error:
                 print(f"{Fore.RED}Connection lost.{Style.RESET_ALL}")
@@ -233,8 +276,14 @@ class BluetoothChatSimClient:
                     break
                     
                 if message.strip():  # Only send non-empty messages
-                    self.client_socket.send(message.encode('utf-8'))
-                    print(f"\033[F{Fore.GREEN}{self.username}: {message}{Style.RESET_ALL}")
+                    # Encrypt message if encryption is enabled
+                    if self.encryption and self.encryption.is_encrypted():
+                        encrypted_message = self.encryption.encrypt_message(message)
+                        self.client_socket.send(encrypted_message.encode('utf-8'))
+                        print(f"\033[F{Fore.GREEN}{self.username}: {message} {Fore.GREEN}🔒{Style.RESET_ALL}")
+                    else:
+                        self.client_socket.send(message.encode('utf-8'))
+                        print(f"\033[F{Fore.GREEN}{self.username}: {message}{Style.RESET_ALL}")
                     
             except socket.error:
                 print(f"{Fore.RED}Connection lost.{Style.RESET_ALL}")
@@ -271,7 +320,7 @@ def main():
         print(f"{Fore.GREEN}  python chat_simulation.py server   # Start as server{Style.RESET_ALL}")
         print(f"{Fore.GREEN}  python chat_simulation.py client   # Start as client{Style.RESET_ALL}")
         print()
-        print(f"{Fore.MAGENTA}Note: This is a TCP simulation of Bluetooth RFCOMM for testing purposes.{Style.RESET_ALL}")
+        print(f"{Fore.MAGENTA}Note: This is a TCP simulation of Bluetooth RFCOMM with encryption support.{Style.RESET_ALL}")
         return
     
     mode = sys.argv[1]

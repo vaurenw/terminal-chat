@@ -10,6 +10,7 @@ import threading
 import sys
 import time
 from colorama import init, Fore, Style
+from encryption import ChatEncryption, get_chat_password
 
 # Initialize colorama for Windows compatibility
 init()
@@ -19,6 +20,7 @@ class BluetoothChatClient:
         self.client_socket = None
         self.running = False
         self.username = "Client"
+        self.encryption = None
         
     def discover_devices(self):
         """Discover nearby Bluetooth devices"""
@@ -68,6 +70,14 @@ class BluetoothChatClient:
             
     def connect_to_server(self, server_addr, port):
         """Connect to the chat server"""
+        # Setup encryption
+        password = get_chat_password()
+        if password:
+            self.encryption = ChatEncryption(password)
+            print(f"{Fore.GREEN}🔒 Encryption enabled{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.YELLOW}⚠️  No encryption - messages will be sent in plaintext{Style.RESET_ALL}")
+        
         try:
             print(f"{Fore.CYAN}Connecting to {server_addr}:{port}...{Style.RESET_ALL}")
             
@@ -119,8 +129,17 @@ class BluetoothChatClient:
                     print(f"{Fore.RED}Server disconnected.{Style.RESET_ALL}")
                     self.running = False
                     break
-                    
-                print(f"{Fore.BLUE}Server: {message}{Style.RESET_ALL}")
+                
+                # Decrypt message if encryption is enabled
+                if self.encryption and self.encryption.is_encrypted():
+                    try:
+                        decrypted_message = self.encryption.decrypt_message(message)
+                        print(f"{Fore.BLUE}Server: {decrypted_message} {Fore.GREEN}🔒{Style.RESET_ALL}")
+                    except Exception as e:
+                        print(f"{Fore.RED}Failed to decrypt message from server{Style.RESET_ALL}")
+                        print(f"{Fore.BLUE}Server (encrypted): {message[:50]}...{Style.RESET_ALL}")
+                else:
+                    print(f"{Fore.BLUE}Server: {message}{Style.RESET_ALL}")
                 
             except bluetooth.BluetoothError:
                 print(f"{Fore.RED}Connection lost.{Style.RESET_ALL}")
@@ -144,8 +163,14 @@ class BluetoothChatClient:
                     break
                     
                 if message.strip():  # Only send non-empty messages
-                    self.client_socket.send(message.encode('utf-8'))
-                    print(f"\033[F{Fore.GREEN}{self.username}: {message}{Style.RESET_ALL}")
+                    # Encrypt message if encryption is enabled
+                    if self.encryption and self.encryption.is_encrypted():
+                        encrypted_message = self.encryption.encrypt_message(message)
+                        self.client_socket.send(encrypted_message.encode('utf-8'))
+                        print(f"\033[F{Fore.GREEN}{self.username}: {message} {Fore.GREEN}🔒{Style.RESET_ALL}")
+                    else:
+                        self.client_socket.send(message.encode('utf-8'))
+                        print(f"\033[F{Fore.GREEN}{self.username}: {message}{Style.RESET_ALL}")
                     
             except bluetooth.BluetoothError:
                 print(f"{Fore.RED}Connection lost.{Style.RESET_ALL}")
@@ -207,9 +232,12 @@ class BluetoothChatClient:
 
 def main():
     """Main function"""
-    print(f"{Fore.CYAN}╔══════════════════════════════════════╗{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}║     Bluetooth RFCOMM Chat Client     ║{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}╚══════════════════════════════════════╝{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}████████╗     ██████╗██╗  ██╗ █████╗ ████████╗{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}╚══██╔══╝    ██╔════╝██║  ██║██╔══██╗╚══██╔══╝{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}   ██║       ██║     ███████║███████║   ██║   {Style.RESET_ALL}")
+    print(f"{Fore.CYAN}   ██║       ██║     ██╔══██║██╔══██║   ██║   {Style.RESET_ALL}")
+    print(f"{Fore.CYAN}   ██║       ╚██████╗██║  ██║██║  ██║   ██║   {Style.RESET_ALL}")
+    print(f"{Fore.CYAN}   ╚═╝        ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   {Style.RESET_ALL}")
     print()
     
     client = BluetoothChatClient()
