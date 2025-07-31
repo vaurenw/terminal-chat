@@ -7,8 +7,6 @@
    ╚═╝        ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   
 ```
 
-# Bluetooth Terminal Chat
-
 Terminal-based chat application for Bluetooth communication with optional encryption.
 
 ## Install
